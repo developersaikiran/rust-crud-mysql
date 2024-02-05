@@ -1,10 +1,17 @@
-mod handler;
-mod model;
-mod response;
+// mod handler;
+// mod model;
+// mod response;
 
 use actix_cors::Cors;
 use actix_web::middleware::Logger;
 use actix_web::{http::header, web, App, HttpServer};
+
+mod services;
+use crate::services::{
+    handler, 
+    model,
+    response
+};
 use model::AppState;
 
 #[actix_web::main]
