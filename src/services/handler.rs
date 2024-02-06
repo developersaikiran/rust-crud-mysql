@@ -1,10 +1,13 @@
 use crate::{
-    model::{AppState, QueryOptions, Todo, UpdateTodoSchema},
-    response::{GenericResponse, SingleTodoResponse, TodoData, TodoListResponse},
+    model::{AppState, QueryOptions, UpdateUserSchema, User},
+    response::{GenericResponse, SingleUserResponse, UserData, UserListResponse},
 };
 use actix_web::{delete, get, patch, post, web, HttpResponse, Responder};
 use chrono::prelude::*;
 use uuid::Uuid;
+
+use sqlx::mysql::MySqlRow;
+use sqlx::query_as;
 
 #[get("/healthchecker")]
 async fn health_checker_handler() -> impl Responder {
@@ -17,167 +20,179 @@ async fn health_checker_handler() -> impl Responder {
     HttpResponse::Ok().json(response_json)
 }
 
-#[get("/todos")]
-pub async fn todos_list_handler(
+#[get("/users")]
+pub async fn users_list_handler(
     opts: web::Query<QueryOptions>,
     data: web::Data<AppState>,
-    ) -> impl Responder {
-    let todos = data.todo_db.lock().unwrap();
-
+) -> impl Responder {
+    
+    let pool = data.db.lock().unwrap();
     let limit = opts.limit.unwrap_or(10);
-    let offset = (opts.page.unwrap_or(1) - 1) * limit;
+    let skip = opts.skip.unwrap_or(0);
+    
+    let users_result = sqlx::query_as!(User, r#"SELECT id, name, email, password, createdAt, updatedAt FROM users LIMIT ? OFFSET ?"#, limit as i64, skip as i64)
+    .fetch_all(&*pool)
+    .await;
+    // .map_err(|e| {
+    //     eprintln!("Error fetching users: {:?}", e);
+    //     HttpResponse::InternalServerError().finish()
+    // })?;
 
-    let todos: Vec<Todo> = todos.clone().into_iter().skip(offset).take(limit).collect();
-
-    let json_response = TodoListResponse {
-        status: "success 123".to_string(),
-        results: todos.len(),
-        todos,
+    let users = match users_result {
+        Ok(users) => users,
+        Err(_) => return HttpResponse::InternalServerError().finish(),
     };
-    HttpResponse::Ok().json(json_response)
-}
 
-#[post("/todos")]
-async fn create_todo_handler(
-    mut body: web::Json<Todo>,
-    data: web::Data<AppState>,
-    ) -> impl Responder {
-    let mut vec = data.todo_db.lock().unwrap();
-
-    let todo = vec.iter().find(|todo| todo.title == body.title);
-
-    if todo.is_some() {
-        let error_response = GenericResponse {
-            status: "fail".to_string(),
-            message: format!("Todo with title: '{}' already exists", body.title),
-        };
-        return HttpResponse::Conflict().json(error_response);
-    }
-
-    let uuid_id = Uuid::new_v4();
-    let datetime = Utc::now();
-
-    body.id = Some(uuid_id.to_string());
-    body.completed = Some(false);
-    body.createdAt = Some(datetime);
-    body.updatedAt = Some(datetime);
-
-    let todo = body.to_owned();
-
-    vec.push(body.into_inner());
-
-    let json_response = SingleTodoResponse {
+    let json_response = UserListResponse {
         status: "success".to_string(),
-        data: TodoData { todo },
+        results: users.len(),
+        users,
     };
 
     HttpResponse::Ok().json(json_response)
 }
 
-#[get("/todos/{id}")]
-async fn get_todo_handler(path: web::Path<String>, data: web::Data<AppState>) -> impl Responder {
-    let vec = data.todo_db.lock().unwrap();
+// #[post("/users")]
+// async fn create_user_handler(
+//     mut body: web::Json<User>,
+//     data: web::Data<AppState>,
+// ) -> impl Responder {
+//     let mut vec = data.user_db.lock().unwrap();
 
-    let id = path.into_inner();
-    let todo = vec.iter().find(|todo| todo.id == Some(id.to_owned()));
+//     let user = vec.iter().find(|user| user.title == body.title);
 
-    if todo.is_none() {
-        let error_response = GenericResponse {
-            status: "fail".to_string(),
-            message: format!("Todo with ID: {} not found", id),
-        };
-        return HttpResponse::NotFound().json(error_response);
-    }
+//     if user.is_some() {
+//         let error_response = GenericResponse {
+//             status: "fail".to_string(),
+//             message: format!("User with title: '{}' already exists", body.title),
+//         };
+//         return HttpResponse::Conflict().json(error_response);
+//     }
 
-    let todo = todo.unwrap();
-    let json_response = SingleTodoResponse {
-        status: "success 456".to_string(),
-        data: TodoData { todo: todo.clone() },
-    };
+//     let uuid_id = Uuid::new_v4();
+//     let datetime = Utc::now();
 
-    HttpResponse::Ok().json(json_response)
-}
+//     body.id = Some(uuid_id.to_string());
+//     body.completed = Some(false);
+//     body.createdAt = Some(datetime);
+//     body.updatedAt = Some(datetime);
 
-#[patch("/todos/{id}")]
-async fn edit_todo_handler(
-    path: web::Path<String>,
-    body: web::Json<UpdateTodoSchema>,
-    data: web::Data<AppState>,
-    ) -> impl Responder {
-    let mut vec = data.todo_db.lock().unwrap();
+//     let user = body.to_owned();
 
-    let id = path.into_inner();
-    let todo = vec.iter_mut().find(|todo| todo.id == Some(id.to_owned()));
+//     vec.push(body.into_inner());
 
-    if todo.is_none() {
-        let error_response = GenericResponse {
-            status: "fail".to_string(),
-            message: format!("Todo with ID: {} not found", id),
-        };
-        return HttpResponse::NotFound().json(error_response);
-    }
+//     let json_response = SingleUserResponse {
+//         status: "success".to_string(),
+//         data: UserData { user },
+//     };
 
-    let todo = todo.unwrap();
-    let datetime = Utc::now();
-    let title = body.title.to_owned().unwrap_or(todo.title.to_owned());
-    let content = body.content.to_owned().unwrap_or(todo.content.to_owned());
-    let payload = Todo {
-        id: todo.id.to_owned(),
-        title: if !title.is_empty() {
-            title
-        } else {
-            todo.title.to_owned()
-        },
-        content: if !content.is_empty() {
-            content
-        } else {
-            todo.content.to_owned()
-        },
-        completed: if body.completed.is_some() {
-            body.completed
-        } else {
-            todo.completed
-        },
-        createdAt: todo.createdAt,
-        updatedAt: Some(datetime),
-    };
-    *todo = payload;
+//     HttpResponse::Ok().json(json_response)
+// }
 
-    let json_response = SingleTodoResponse {
-        status: "success".to_string(),
-        data: TodoData { todo: todo.clone() },
-    };
+// #[get("/users/{id}")]
+// async fn get_user_handler(path: web::Path<String>, data: web::Data<AppState>) -> impl Responder {
+//     let vec = data.user_db.lock().unwrap();
 
-    HttpResponse::Ok().json(json_response)
-}
+//     let id = path.into_inner();
+//     let user = vec.iter().find(|user| user.id == Some(id.to_owned()));
 
-#[delete("/todos/{id}")]
-async fn delete_todo_handler(path: web::Path<String>, data: web::Data<AppState>) -> impl Responder {
-    let mut vec = data.todo_db.lock().unwrap();
+//     if user.is_none() {
+//         let error_response = GenericResponse {
+//             status: "fail".to_string(),
+//             message: format!("User with ID: {} not found", id),
+//         };
+//         return HttpResponse::NotFound().json(error_response);
+//     }
 
-    let id = path.into_inner();
-    let todo = vec.iter_mut().find(|todo| todo.id == Some(id.to_owned()));
+//     let user = user.unwrap();
+//     let json_response = SingleUserResponse {
+//         status: "success 456".to_string(),
+//         data: UserData { user: user.clone() },
+//     };
 
-    if todo.is_none() {
-        let error_response = GenericResponse {
-            status: "fail".to_string(),
-            message: format!("Todo with ID: {} not found", id),
-        };
-        return HttpResponse::NotFound().json(error_response);
-    }
+//     HttpResponse::Ok().json(json_response)
+// }
 
-    vec.retain(|todo| todo.id != Some(id.to_owned()));
-    HttpResponse::NoContent().finish()
-}
+// #[patch("/users/{id}")]
+// async fn edit_user_handler(
+//     path: web::Path<String>,
+//     body: web::Json<UpdateUserSchema>,
+//     data: web::Data<AppState>,
+//     ) -> impl Responder {
+//     let mut vec = data.user_db.lock().unwrap();
+
+//     let id = path.into_inner();
+//     let user = vec.iter_mut().find(|user| user.id == Some(id.to_owned()));
+
+//     if user.is_none() {
+//         let error_response = GenericResponse {
+//             status: "fail".to_string(),
+//             message: format!("User with ID: {} not found", id),
+//         };
+//         return HttpResponse::NotFound().json(error_response);
+//     }
+
+//     let user = user.unwrap();
+//     let datetime = Utc::now();
+//     let title = body.title.to_owned().unwrap_or(user.title.to_owned());
+//     let content = body.content.to_owned().unwrap_or(user.content.to_owned());
+//     let payload = User {
+//         id: user.id.to_owned(),
+//         title: if !title.is_empty() {
+//             title
+//         } else {
+//             user.title.to_owned()
+//         },
+//         content: if !content.is_empty() {
+//             content
+//         } else {
+//             user.content.to_owned()
+//         },
+//         completed: if body.completed.is_some() {
+//             body.completed
+//         } else {
+//             user.completed
+//         },
+//         createdAt: user.createdAt,
+//         updatedAt: Some(datetime),
+//     };
+//     *user = payload;
+
+//     let json_response = SingleUserResponse {
+//         status: "success".to_string(),
+//         data: UserData { user: user.clone() },
+//     };
+
+//     HttpResponse::Ok().json(json_response)
+// }
+
+// #[delete("/users/{id}")]
+// async fn delete_user_handler(path: web::Path<String>, data: web::Data<AppState>) -> impl Responder {
+//     let mut vec = data.user_db.lock().unwrap();
+
+//     let id = path.into_inner();
+//     let user = vec.iter_mut().find(|user| user.id == Some(id.to_owned()));
+
+//     if user.is_none() {
+//         let error_response = GenericResponse {
+//             status: "fail".to_string(),
+//             message: format!("User with ID: {} not found", id),
+//         };
+//         return HttpResponse::NotFound().json(error_response);
+//     }
+
+//     vec.retain(|user| user.id != Some(id.to_owned()));
+//     HttpResponse::NoContent().finish()
+// }
 
 pub fn config(conf: &mut web::ServiceConfig) {
     let scope = web::scope("/api")
         .service(health_checker_handler)
-        .service(todos_list_handler)
-        .service(create_todo_handler)
-        .service(get_todo_handler)
-        .service(edit_todo_handler)
-        .service(delete_todo_handler);
+        .service(users_list_handler);
+    // .service(create_user_handler)
+    // .service(get_user_handler)
+    // .service(edit_user_handler)
+    // .service(delete_user_handler);
 
     conf.service(scope);
 }

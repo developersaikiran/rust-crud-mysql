@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-use crate::model::Todo;
+use crate::model::User;
 
 #[derive(Serialize)]
 pub struct GenericResponse {
@@ -9,19 +9,19 @@ pub struct GenericResponse {
 }
 
 #[derive(Serialize, Debug)]
-pub struct TodoData {
-    pub todo: Todo,
+pub struct UserData {
+    pub user: User,
 }
 
 #[derive(Serialize, Debug)]
-pub struct SingleTodoResponse {
+pub struct SingleUserResponse {
     pub status: String,
-    pub data: TodoData,
+    pub data: UserData,
 }
 
 #[derive(Serialize, Debug)]
-pub struct TodoListResponse {
+pub struct UserListResponse {
     pub status: String,
     pub results: usize,
-    pub todos: Vec<Todo>,
+    pub users: Vec<User>,
 }
