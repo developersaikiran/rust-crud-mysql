@@ -3,8 +3,11 @@ use actix_web::middleware::Logger;
 use actix_web::{http::header, web, App, HttpServer};
 
 mod services;
-use crate::services::{handler, model, response};
+use crate::services::{model, response};
 use model::AppState;
+
+mod controllers;
+use crate::controllers::{user};
 
 mod routes;
 use crate::routes::{index};

@@ -20,8 +20,8 @@ pub struct SingleUserResponse {
 }
 
 #[derive(Serialize, Debug)]
-pub struct UserListResponse {
+pub struct SuccessResponse {
     pub status: String,
     pub results: usize,
-    pub users: Vec<User>,
+    pub data: Vec<User>,
 }

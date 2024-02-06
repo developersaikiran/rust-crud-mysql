@@ -1,6 +1,6 @@
 use crate::{
     model::{AppState, QueryOptions, UpdateUserSchema, User},
-    response::{GenericResponse, SingleUserResponse, UserData, UserListResponse},
+    response::{GenericResponse, SingleUserResponse, UserData, SuccessResponse},
 };
 use actix_web::{delete, get, patch, post, web, HttpResponse, Responder};
 use chrono::prelude::*;
@@ -24,7 +24,7 @@ pub async fn users_list_handler(
     .await;
     let users = users_result.expect("Failed to fetch users from the database");
 
-    let json_response = UserListResponse {
+    let json_response = SuccessResponse {
         status: "success".to_string(),
         results: users.len(),
         users,
