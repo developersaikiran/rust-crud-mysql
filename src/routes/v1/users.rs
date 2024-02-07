@@ -1,6 +1,6 @@
 use crate::{
     model::{AppState, QueryOptions, UpdateUserSchema, User},
-    response::{GenericResponse, SingleUserResponse, UserData, SuccessResponse},
+    response::{success_response},
 };
 use actix_web::{delete, get, patch, post, web, HttpResponse, Responder};
 use chrono::prelude::*;
@@ -12,7 +12,7 @@ use sqlx::query_as;
 use crate::{
     controllers:: {
         user::{
-            auth::{users_list_handler}
+            auth
         }
     }
 };
@@ -43,7 +43,7 @@ use crate::{
 //     .await;
 //     let users = users_result.expect("Failed to fetch users from the database");
 
-//     let json_response = SuccessResponse {
+//     let json_response = success_response {
 //         status: "success".to_string(),
 //         results: users.len(),
 //         users,
@@ -62,9 +62,8 @@ use crate::{
 
 
 #[get("/lists")]
-pub async fn users_list_handler1( opts: web::Query<QueryOptions>, data: web::Data<AppState> ) -> impl Responder {
-    match users_list_handler(opts, data).await {
-        // Ok(users) => HttpResponse::Ok().json(users),
+pub async fn users_lists_handler( opts: web::Query<QueryOptions>, data: web::Data<AppState> ) -> impl Responder {
+    match auth::users_lists(opts, data).await {
         Ok(users) => users,
         Err(response) => response,
     }
@@ -75,7 +74,7 @@ pub async fn users_list_handler1( opts: web::Query<QueryOptions>, data: web::Dat
 
 pub fn config(conf: &mut web::ServiceConfig) {
     let scope = web::scope("/users")
-        .service(users_list_handler1);
+        .service(users_lists_handler);
 
     conf.service(scope);
 }

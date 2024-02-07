@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 use dotenv::dotenv;
 use sqlx::mysql::{MySqlPool, MySqlPoolOptions};
+use serde_json::Value;
 
 #[allow(non_snake_case)]
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -13,7 +14,22 @@ pub struct User {
     pub password: String,
     pub createdAt: Option<DateTime<Utc>>,
     pub updatedAt: Option<DateTime<Utc>>,
+    // pub user_roles: Option<Vec<Tuple>>,
+    pub user_roles: String,
+
+    // pub user_roles_id: Option<i32>,
+    // pub user_roles_user_id: Array,
+    // pub user_roles_role_id: Option<i32>,
 }
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct UserRole {
+    pub id: Option<i32>,
+    pub user_id: Option<i32>,
+    pub role_id: Option<i32>,
+}
+
+
 
 pub struct AppState {
     pub db: Arc<Mutex<MySqlPool>>,

@@ -1,27 +1,35 @@
 use serde::Serialize;
-
 use crate::model::User;
 
-#[derive(Serialize)]
-pub struct GenericResponse {
-    pub status: String,
-    pub message: String,
+#[derive(Serialize, Debug)]
+// pub struct success_response<T> {
+//     pub status: i32, // 200
+//     pub success: bool, // true
+//     pub message: usize, // success message
+//     pub data: T, // array or object return
+// }
+pub struct ResponseInterface<T> {
+    pub status: i32, // 200
+    pub success: bool, // true
+    pub message: String, // success message
+    pub data: T, // array or object return
 }
 
-#[derive(Serialize, Debug)]
-pub struct UserData {
-    pub user: User,
+
+pub fn success_response<T>(data: T, message: &str) -> Result<ResponseInterface<T>, &'static str> {
+    Ok(ResponseInterface {
+        status: 200,
+        success: true,
+        message: message.to_string(),
+        data,
+    })
 }
 
-#[derive(Serialize, Debug)]
-pub struct SingleUserResponse {
-    pub status: String,
-    pub data: UserData,
-}
-
-#[derive(Serialize, Debug)]
-pub struct SuccessResponse {
-    pub status: String,
-    pub results: usize,
-    pub data: Vec<User>,
+pub fn server_error_response<T>(data: T, message: &str) -> Result<ResponseInterface<T>, &'static str> {
+    Ok(ResponseInterface {
+        status: 500,
+        success: false,
+        message: "failed".to_string(),
+        data,
+    })
 }

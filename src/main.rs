@@ -14,7 +14,7 @@ use crate::routes::{index};
 
 use env_logger::Env;
 use std::fs::{self, OpenOptions};
-use std::io::Write;
+use dotenv::dotenv;
 
 
 
@@ -55,9 +55,11 @@ fn create_log_file() -> std::io::Result<std::fs::File> {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    dotenv().ok();
+    let port = std::env::var("PORT_DEV").unwrap_or("8000".to_string());
 
     setup_logger();
-    let log_file = create_log_file().expect("Failed to create log file");
+    // let log_file = create_log_file().expect("Failed to create log file");
 
     let db = AppState::init().await.expect("Failed to initialize app state");
     let app_data = web::Data::new(db);
@@ -84,7 +86,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(Logger::default())
             .wrap(Logger::new("%a %{User-Agent}i"))
     })
-    .bind(("127.0.0.1", 8000))?
+    .bind((format!("127.0.0.1:{port}")))?
     .run()
     .await
     

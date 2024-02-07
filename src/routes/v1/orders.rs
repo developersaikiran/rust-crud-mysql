@@ -1,6 +1,6 @@
 use crate::{
     model::{AppState, QueryOptions, UpdateUserSchema, User},
-    response::{GenericResponse, SingleUserResponse, UserData, SuccessResponse},
+    response::{success_response},
 };
 use actix_web::{delete, get, patch, post, web, HttpResponse, Responder};
 use chrono::prelude::*;
@@ -15,22 +15,19 @@ pub async fn users_list_handler(
     data: web::Data<AppState>,
 ) -> impl Responder {
     
-    let pool = data.db.lock().unwrap();
-    let limit = opts.limit.unwrap_or(10);
-    let skip = opts.skip.unwrap_or(0);
+    // let pool = data.db.lock().unwrap();
+    // let limit = opts.limit.unwrap_or(10);
+    // let skip = opts.skip.unwrap_or(0);
     
-    let users_result = sqlx::query_as!(User, r#"SELECT id, name, email, password, createdAt, updatedAt FROM users LIMIT ? OFFSET ?"#, limit as i64, skip as i64)
-    .fetch_all(&*pool)
-    .await;
-    let users = users_result.expect("Failed to fetch users from the database");
+    // let users_result = sqlx::query_as!(User, r#"SELECT id, name, email, password, createdAt, updatedAt FROM users LIMIT ? OFFSET ?"#, limit as i64, skip as i64)
+    // .fetch_all(&*pool)
+    // .await;
+    // let users = users_result.expect("Failed to fetch users from the database");
 
-    let json_response = SuccessResponse {
-        status: "success".to_string(),
-        results: users.len(),
-        users,
-    };
+    // let json_response = success_response (users, "success");
 
-    HttpResponse::Ok().json(json_response)
+    // HttpResponse::Ok().json(json_response)
+    HttpResponse::Ok().json("")
 }
 
 pub fn config(conf: &mut web::ServiceConfig) {
