@@ -1,3 +1,4 @@
 pub mod index;
-pub mod users;
-pub mod orders;
+pub mod user;
+pub mod admin;
+pub mod common;

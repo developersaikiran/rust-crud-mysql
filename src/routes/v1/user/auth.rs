@@ -12,7 +12,13 @@ use sqlx::query_as;
 use crate::{
     controllers:: {
         user::{
-            auth
+            login:: {
+                login,
+                rType:: {
+                    RequestBody_RTypes,
+                    FindUser_RType,
+                }
+            }
         }
     }
 };
@@ -61,9 +67,9 @@ use crate::{
 // }
 
 
-#[get("/lists")]
-pub async fn users_lists_handler( opts: web::Query<QueryOptions>, data: web::Data<AppState> ) -> impl Responder {
-    match auth::users_lists(opts, data).await {
+#[post("/login")]
+pub async fn users_login_handler( opts: web::Json<RequestBody_RTypes>, data: web::Data<AppState> ) -> impl Responder {
+    match login::users_login(opts, data).await {
         Ok(users) => users,
         Err(response) => response,
     }
@@ -73,8 +79,8 @@ pub async fn users_lists_handler( opts: web::Query<QueryOptions>, data: web::Dat
 
 
 pub fn config(conf: &mut web::ServiceConfig) {
-    let scope = web::scope("/users")
-        .service(users_lists_handler);
+    let scope = web::scope("/auth")
+        .service(users_login_handler);
 
     conf.service(scope);
 }

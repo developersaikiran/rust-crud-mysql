@@ -6,7 +6,7 @@ mod services;
 use crate::services::{model, response};
 use model::AppState;
 
-mod controllers;
+pub mod controllers;
 use crate::controllers::{user};
 
 mod routes;
@@ -15,7 +15,6 @@ use crate::routes::{index};
 use env_logger::Env;
 use std::fs::{self, OpenOptions};
 use dotenv::dotenv;
-
 
 
 

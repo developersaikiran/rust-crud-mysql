@@ -15,7 +15,8 @@ pub struct User {
     pub createdAt: Option<DateTime<Utc>>,
     pub updatedAt: Option<DateTime<Utc>>,
     // pub user_roles: Option<Vec<Tuple>>,
-    pub user_roles: String,
+    // #[serde(skip_serializing)]
+    pub user_roles: Option<String>,
 
     // pub user_roles_id: Option<i32>,
     // pub user_roles_user_id: Array,

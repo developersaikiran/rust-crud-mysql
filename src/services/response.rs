@@ -1,35 +1,96 @@
-use serde::Serialize;
-use crate::model::User;
+// use serde::Serialize;
+// use crate::model::User;
 
-#[derive(Serialize, Debug)]
-// pub struct success_response<T> {
+// #[derive(Serialize, Debug)]
+// // pub struct success_response<T> {
+// //     pub status: i32, // 200
+// //     pub success: bool, // true
+// //     pub message: usize, // success message
+// //     pub data: T, // array or object return
+// // }
+// pub struct ResponseInterface<T> {
 //     pub status: i32, // 200
 //     pub success: bool, // true
-//     pub message: usize, // success message
+//     pub message: String, // success message
 //     pub data: T, // array or object return
+//     pub err: T, // array or object return
 // }
-pub struct ResponseInterface<T> {
-    pub status: i32, // 200
-    pub success: bool, // true
-    pub message: String, // success message
-    pub data: T, // array or object return
+
+
+// pub fn success_response<T>(data: T, message: &str) -> ResponseInterface<T> {
+//     ResponseInterface {
+//         status: 200,
+//         success: true,
+//         message: message.to_string(),
+//         data,
+//     }
+// }
+
+// pub fn server_error_response<T>(data: T, message: &str, err: T) -> ResponseInterface<T> {
+//     ResponseInterface {
+//         status: 500,
+//         success: false,
+//         message: "failed".to_string(),
+//         data,
+//         err,
+//     }
+// }
+
+// pub fn bad_request_response<T>(data: T, message: &str, err: T) -> ResponseInterface<T> {
+//     ResponseInterface {
+//         status: 400,
+//         success: false,
+//         message: "failed".to_string(),
+//         data,
+//         err,
+//     }
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+use serde::Serialize;
+
+#[derive(Serialize, Debug)]
+pub struct ResponseInterface<T, E> {
+    pub status: i32,
+    pub success: bool,
+    pub message: String,
+    pub data: T,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub err: Option<E>, // Make err an Option<T>
 }
 
-
-pub fn success_response<T>(data: T, message: &str) -> Result<ResponseInterface<T>, &'static str> {
-    Ok(ResponseInterface {
-        status: 200,
-        success: true,
-        message: message.to_string(),
-        data,
-    })
+impl<T, E> ResponseInterface<T, E> {
+    pub fn new(status: i32, success: bool, message: &str, data: T, err: Option<E>) -> Self {
+        ResponseInterface {
+            status,
+            success,
+            message: message.to_string(),
+            data,
+            err,
+        }
+    }
 }
 
-pub fn server_error_response<T>(data: T, message: &str) -> Result<ResponseInterface<T>, &'static str> {
-    Ok(ResponseInterface {
-        status: 500,
-        success: false,
-        message: "failed".to_string(),
-        data,
-    })
+pub fn success_response<T>(data: T, message: &str) -> ResponseInterface<T, ()> {
+    ResponseInterface::new(200, true, message, data, None)
+}
+
+pub fn server_error_response<T, E>(data: T, message: &str, err: E) -> ResponseInterface<T, E> {
+    ResponseInterface::new(500, false, message, data, Some(err))
+}
+
+pub fn bad_request_response<T, E>(data: T, message: &str, err: E) -> ResponseInterface<T, E> {
+    ResponseInterface::new(400, false, message, data, Some(err))
 }
