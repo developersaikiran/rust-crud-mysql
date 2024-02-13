@@ -1,5 +1,5 @@
 use crate::{
-    model::{AppState, QueryOptions },
+    database::{ AppState },
     response::{server_error_response, success_response, bad_request_response},
 };
 
@@ -30,23 +30,6 @@ pub async fn users_login( opts: web::Json<RequestBody_RTypes>, data: web::Data<A
 
     match users_result {
         Ok(users) => {
-
-            // return Ok(HttpResponse::InternalServerError().json(server_error_response({}, "User is already exits")));
-
-            // if users.name == String::from("saikiran") {
-            //     println!("This is my data: {:?}", users);
-            //     return Ok(HttpResponse::Ok().json(server_error_response({}, "User is already exits")));
-            // } 
-
-            // let json_response = match success_response(users, "success") {
-            //     Ok(response) => response,
-            //     Err(err) => {
-            //         eprintln!("Error creating success response: {}", err);
-            //         return Err(HttpResponse::InternalServerError().finish());
-            //     }
-            // };
-
-            // Ok(HttpResponse::Ok().json(success_response(users, "success")))
             if users.password == password {
                 Ok(HttpResponse::Ok().json(success_response(users, "success")))
             } else{

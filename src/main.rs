@@ -2,9 +2,13 @@ use actix_cors::Cors;
 use actix_web::middleware::Logger;
 use actix_web::{http::header, web, App, HttpServer};
 
+mod config;
+use crate::config::{ database };
+use database::AppState;
+
 mod services;
-use crate::services::{model, response};
-use model::AppState;
+use crate::services::{response};
+// use model::AppState;
 
 pub mod controllers;
 use crate::controllers::{user};
@@ -57,7 +61,7 @@ async fn main() -> std::io::Result<()> {
     dotenv().ok();
     let port = std::env::var("PORT_DEV").unwrap_or("8000".to_string());
 
-    setup_logger();
+    // setup_logger();
     // let log_file = create_log_file().expect("Failed to create log file");
 
     let db = AppState::init().await.expect("Failed to initialize app state");
