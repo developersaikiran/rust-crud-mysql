@@ -2,11 +2,15 @@ use actix_cors::Cors;
 use actix_web::middleware::Logger;
 use actix_web::{http::header, web, App, HttpServer};
 
-mod services;
-use crate::services::{model, response};
-use model::AppState;
+mod config;
+use crate::config::{ database };
+use database::AppState;
 
-mod controllers;
+mod services;
+use crate::services::{response};
+// use model::AppState;
+
+pub mod controllers;
 use crate::controllers::{user};
 
 mod routes;
@@ -15,7 +19,6 @@ use crate::routes::{index};
 use env_logger::Env;
 use std::fs::{self, OpenOptions};
 use dotenv::dotenv;
-
 
 
 
@@ -58,7 +61,7 @@ async fn main() -> std::io::Result<()> {
     dotenv().ok();
     let port = std::env::var("PORT_DEV").unwrap_or("8000".to_string());
 
-    setup_logger();
+    // setup_logger();
     // let log_file = create_log_file().expect("Failed to create log file");
 
     let db = AppState::init().await.expect("Failed to initialize app state");
@@ -86,7 +89,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(Logger::default())
             .wrap(Logger::new("%a %{User-Agent}i"))
     })
-    .bind((format!("127.0.0.1:{port}")))?
+    .bind(format!("127.0.0.1:{port}"))?
     .run()
     .await
     

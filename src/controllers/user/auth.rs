@@ -2,7 +2,13 @@ use crate::{
     model::{AppState, QueryOptions, UpdateUserSchema, User},
     response::{server_error_response, success_response},
 };
-use actix_web::{web, HttpResponse};
+use actix_web::{
+    web,
+    Responder,
+    HttpResponse,
+};
+
+
 
 pub async fn users_lists(
     opts: web::Query<QueryOptions>,
@@ -35,22 +41,22 @@ pub async fn users_lists(
     match users_result {
         Ok(users) => {
 
-            return Ok(HttpResponse::InternalServerError().json(server_error_response({}, "User is already exits")));
+            // return Ok(HttpResponse::InternalServerError().json(server_error_response({}, "User is already exits")));
 
             // if users.name == String::from("saikiran") {
             //     println!("This is my data: {:?}", users);
-            //     return Ok(HttpResponse::StatusCode(500).json(server_error_response({}, "User is already exits")));
+            //     return Ok(HttpResponse::Ok().json(server_error_response({}, "User is already exits")));
             // } 
 
-            // let json_response = match success_response(users, "success") {
-            //     Ok(response) => response,
-            //     Err(err) => {
-            //         eprintln!("Error creating success response: {}", err);
-            //         return Err(HttpResponse::InternalServerError().finish());
-            //     }
-            // };
+            let json_response = match success_response(users, "success") {
+                Ok(response) => response,
+                Err(err) => {
+                    eprintln!("Error creating success response: {}", err);
+                    return Err(HttpResponse::InternalServerError().finish());
+                }
+            };
 
-            // Ok(HttpResponse::Ok().json(json_response))
+            Ok(HttpResponse::Ok().json(json_response))
         }
         Err(err) => {
             eprintln!("Error fetching users: {:?}", err);
